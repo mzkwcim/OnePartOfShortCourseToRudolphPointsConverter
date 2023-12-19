@@ -1,5 +1,6 @@
 ﻿using HtmlAgilityPack;
 using Npgsql;
+using System;
 
 
 class SCMRP
@@ -12,30 +13,17 @@ class SCMRP
         string name = GetName(url);
         Console.WriteLine(name);
         Dictionary<string, int> athlete = new Dictionary<string, int>();
-
-        for (int i = 0; i < tab.Length; i++)
-        {
-            if (!distnace[i].Contains("Lap") && !distnace[i].Contains("25m"))
-            {
-                athlete.Add(distnace[i], tab[i]);
-            }
-        }
-        foreach (var wart in athlete)
-        {
-            Console.WriteLine($"{wart.Key}, {wart.Value}");
-        }
         CreateandAdd();
     }
 
     public static void CreateandAdd()
     {
-        string connectionString = "Host=localhost;Username=postgres;Password=postgres;Database=WorldRecords";
+        string connectionString = "Host=localhost;Username=postgres;Password=Mzkwcim181099!;Database=WorldRecords";
 
         Dictionary<string, double> RudolphTableValues = new Dictionary<string, double>();
         double[] wo = ConvertStringToDouble(GettingShortCurseWorldRecordsMen());
-        string[] distancesarray = GettingDistances();
+        List<string> distancesarray = GettingDistances();
         List<double> records = new List<double>(wo);
-        List<string> distances = new List<string>();
         records.Remove(21.75);
         records.Remove(443.42);
         string pomocnik = "REAL";
@@ -67,223 +55,55 @@ class SCMRP
             }
         }
     }
-    public static string CreateTable(string[] distancesarray, string pomocnik)
+    public static string CreateTable(List<string> distancesarray, string pomocnik)
     {
         string createTableQueryTest = "CREATE TABLE WorldRecords (" +
                           "ID SERIAL PRIMARY KEY, ";
-        for (int i = 0; i < distancesarray.Length; i++)
+        for (int i = 0; i < distancesarray.Count; i++)
         {
-            if (i < distancesarray.Length - 1)
-            {
-                createTableQueryTest += $"\"{distancesarray[i]}\" {pomocnik}, ";
-            }
-            else
-            {
-                createTableQueryTest += $"\"{distancesarray[i]}\" {pomocnik} )";
-            }
+            createTableQueryTest += (i < distancesarray.Count - 1) ? $"\"{distancesarray[i]}\" {pomocnik}, " : $"\"{distancesarray[i]}\" {pomocnik} )";
         }
         return createTableQueryTest;
     }
-    public static string AddValues(List<double> records, string[] distancesarray)
+    public static string AddValues(List<double> records, List<string> distancesarray)
     {
         string addValuesQueryTest = "INSERT INTO WorldRecords(";
-        for (int i = 0; i < distancesarray.Length; i++)
+        for (int i = 0; i < distancesarray.Count; i++)
         {
-            if (i < distancesarray.Length - 1)
-            {
-                addValuesQueryTest += $"\"{distancesarray[i]}\", ";
-            }
-            else
-            {
-                addValuesQueryTest += $"\"{distancesarray[i]}\" ) VALUES (";
-            }
+            addValuesQueryTest += (i < distancesarray.Count - 1) ? $"\"{distancesarray[i]}\", " : $"\"{distancesarray[i]}\" ) VALUES (";
         }
         for (int i = 0; i < records.Count; i++)
         {
-            if (i < records.Count - 1)
-            {
-                addValuesQueryTest += $"{records[i]}, ";
-            }
-            else
-            {
-                addValuesQueryTest += $"{records[i]} ";
-            }
-
+            addValuesQueryTest += (i < records.Count - 1) ? $"{records[i]}, " : $"{records[i]} );";
         }
-        addValuesQueryTest += ");";
         return addValuesQueryTest;
     }
     public static string[] GettingShortCurseWorldRecordsMen()
     {
         string url = "https://www.swimrankings.net/index.php?page=recordDetail&recordListId=50001&genderCourse=SCM_1";
-        var httpClient = new HttpClient();
-        var html = httpClient.GetStringAsync(url).Result;
-        var htmlDocument = new HtmlDocument();
-        htmlDocument.LoadHtml(html);
-        var times = htmlDocument.DocumentNode.SelectNodes("//tr[@class='rankingList0']//td[@class='swimtime']//a[@class='time']");
-        var times1 = htmlDocument.DocumentNode.SelectNodes("//tr[@class='rankingList1']//td[@class='swimtime']//a[@class='time']");
-        string[] tab = new string[20];
-        for (int i = 0; i < 20; i++)
+        var htmlDocument = Loader(url);
+        var currentTimes = htmlDocument.DocumentNode.SelectNodes("//td[@class='swimtime']");
+        string[] tab = new string[currentTimes.Count];
+        Console.WriteLine(currentTimes.Count);
+        for (int i = 0; i < currentTimes.Count; i++)
         {
-            if (i < 7)
-            {
-                if (i % 2 == 0)
-                {
-                    string dziwak = times[i / 2].InnerText.Trim();
-                    tab[i] = dziwak;
-                }
-                else if (i == 1)
-                {
-                    string dziwak = times1[0].InnerText.Trim();
-                    tab[1] = dziwak;
-                }
-                else if (i % 2 == 1 && i != 1)
-                {
-                    string dziwak = times1[i / 2].InnerText.Trim();
-                    tab[i] = dziwak;
-                }
-            }
-            else if (i >= 7 && i < 10)
-            {
-                if (i % 2 == 1)
-                {
-                    string dziwak = times[(i / 2) + 1].InnerText.Trim();
-                    tab[i] = dziwak;
-                }
-                else if (i % 2 == 0)
-                {
-                    string dziwak = times1[(i / 2) - 1].InnerText.Trim();
-                    tab[i] = dziwak;
-                }
-            }
-            else if (i >= 10 && i < 13)
-            {
-                if (i % 2 == 0)
-                {
-                    string dziwak = times[(i / 2) + 1].InnerText.Trim();
-                    tab[i] = dziwak;
-                }
-                else if (i % 2 == 1)
-                {
-                    string dziwak = times1[(i / 2) - 1].InnerText.Trim();
-                    tab[i] = dziwak;
-                }
-            }
-            else if (i >= 13 && i < 17)
-            {
-                if (i % 2 == 1)
-                {
-                    string dziwak = times[(i / 2) + 2].InnerText.Trim();
-                    tab[i] = dziwak;
-                }
-                else if (i % 2 == 0)
-                {
-                    string dziwak = times1[(i / 2) - 2].InnerText.Trim();
-                    tab[i] = dziwak;
-                }
-            }
-            else if (i >= 17 && i < 20)
-            {
-                if (i % 2 == 1)
-                {
-                    string dziwak = times[(i / 2) + 2].InnerText.Trim();
-                    tab[i] = dziwak;
-                }
-                else if (i % 2 == 0)
-                {
-                    string dziwak = times1[(i / 2) - 2].InnerText.Trim();
-                    tab[i] = dziwak;
-                }
-            }
+            tab[i] = currentTimes[i].InnerText;
+            Console.WriteLine(tab[i]);
         }
         return tab;
     }
     public static string[] GettingLongCurseWorldRecordsMen()
     {
-        string url = "https://www.swimrankings.net/index.php?page=recordDetail&recordListId=50001";
-        var httpClient = new HttpClient();
-        var html = httpClient.GetStringAsync(url).Result;
-        var htmlDocument = new HtmlDocument();
-        htmlDocument.LoadHtml(html);
-        var times = htmlDocument.DocumentNode.SelectNodes("//tr[@class='rankingList0']//td[@class='swimtime']//a[@class='time']");
-        var times1 = htmlDocument.DocumentNode.SelectNodes("//tr[@class='rankingList1']//td[@class='swimtime']//a[@class='time']");
+        string url = "https://www.swimrankings.net/index.php?page=recordDetail&recordListId=50001&gender=1&course=LCM&styleId=1";
+        var htmlDocument = Loader(url);
+        var currentTimes = htmlDocument.DocumentNode.SelectNodes("//td[@class='swimtime']");
         string[] tab = new string[20];
-        for (int i = 0; i < 20; i++)
+        for (int i = 0; i < tab.Length; i++)
         {
-            if (i < 9)
-            {
-                if (i % 2 == 0)
-                {
-                    string dziwak = times[i / 2].InnerText.Trim();
-                    tab[i] = dziwak;
-                }
-                else if (i == 1)
-                {
-                    string dziwak = times1[0].InnerText.Trim();
-                    tab[1] = dziwak;
-                }
-                else if (i % 2 == 1 && i != 1)
-                {
-                    string dziwak = times1[i / 2].InnerText.Trim();
-                    tab[i] = dziwak;
-                }
-            }
-            else if (i >= 7 && i < 10)
-            {
-                if (i % 2 == 1)
-                {
-                    string dziwak = times[(i / 2) + 1].InnerText.Trim();
-                    tab[i] = dziwak;
-                }
-                else if (i % 2 == 0)
-                {
-                    string dziwak = times1[(i / 2) - 1].InnerText.Trim();
-                    tab[i] = dziwak;
-                }
-            }
-            else if (i >= 10 && i < 13)
-            {
-                if (i % 2 == 0)
-                {
-                    string dziwak = times[(i / 2) + 1].InnerText.Trim();
-                    tab[i] = dziwak;
-                }
-                else if (i % 2 == 1)
-                {
-                    string dziwak = times1[(i / 2) - 1].InnerText.Trim();
-                    tab[i] = dziwak;
-                }
-            }
-            else if (i >= 13 && i < 17)
-            {
-                if (i % 2 == 1)
-                {
-                    string dziwak = times[(i / 2) + 2].InnerText.Trim();
-                    tab[i] = dziwak;
-                }
-                else if (i % 2 == 0)
-                {
-                    string dziwak = times1[(i / 2) - 2].InnerText.Trim();
-                    tab[i] = dziwak;
-                }
-            }
-            else if (i >= 17 && i < 20)
-            {
-                if (i % 2 == 1)
-                {
-                    string dziwak = times[(i / 2) + 2].InnerText.Trim();
-                    tab[i] = dziwak;
-                }
-                else if (i % 2 == 0)
-                {
-                    string dziwak = times1[(i / 2) - 2].InnerText.Trim();
-                    tab[i] = dziwak;
-                }
-            }
+            tab[i] = currentTimes[i].InnerText;
         }
         return tab;
     }
-
     static double [] ConvertStringToDouble(string[]doubles)
     {
         double[] converted2 = new double[doubles.Length]; 
@@ -294,65 +114,67 @@ class SCMRP
         }
         return converted2;
     }
-    public static string[] GettingDistances()
+    public static List<string> GettingDistances()
     {
-        string url = "https://www.swimrankings.net/index.php?page=rankingDetail&club=POL";
-        var httpClient = new HttpClient();
-        var html = httpClient.GetStringAsync(url).Result;
-        var htmlDocument = new HtmlDocument();
-        htmlDocument.LoadHtml(html);
-        var Distance = htmlDocument.DocumentNode.SelectNodes("//tr[@class='rankingList0']//td[@class='swimstyle']//a");
-        var Distance1 = htmlDocument.DocumentNode.SelectNodes("//tr[@class='rankingList1']//td[@class='swimstyle']//a");
-        string[] tab = new string[18];
-        for (int i = 0; i < tab.Length; i++)
+        List<string> url = GettingDistancesFromLinks();
+        List<string> strings = new List<string>();
+
+        foreach (var u in url)
         {
-            if (i % 2 == 0)
+            var htmlDocument = Loader(u);
+            if (!String.IsNullOrEmpty(htmlDocument.DocumentNode.SelectSingleNode("//b").InnerText) && !(htmlDocument.DocumentNode.SelectSingleNode("//b").InnerText == "Record history for 300m Freestyle") && !(htmlDocument.DocumentNode.SelectSingleNode("//b").InnerText == "Record history for 1000m Freestyle"))
             {
-                string dziwak = Distance[i / 2].InnerText.Trim();
-                tab[i] = dziwak;
-            }
-            else if (i % 2 == 1)
-            {
-                string dziwak = Distance1[i / 2].InnerText.Trim();
-                tab[i] = dziwak;
+                strings.Add(htmlDocument.DocumentNode.SelectSingleNode("//b").InnerText.Replace("Record history for ",""));
             }
         }
-        return tab;
-
+        string temp = strings[17];
+        strings[17] = strings[16];
+        strings[16] = strings[15];
+        strings[15] = temp;
+        for (int i = 0; i < strings.Count; i++)
+        {
+            Console.WriteLine(strings[i]);
+        }
+        return strings;
     }
-
-    public static int[] GetPkt(string url)
+    static HtmlAgilityPack.HtmlDocument Loader(string url)
     {
         var httpClient = new HttpClient();
         var html = httpClient.GetStringAsync(url).Result;
         var htmlDocument = new HtmlDocument();
         htmlDocument.LoadHtml(html);
+        return htmlDocument;
+    }
+    public static List<string> GettingDistancesFromLinks()
+    {
+        string url = "https://www.swimrankings.net/index.php?page=recordDetail&recordListId=50001&gender=1&course=SCM&styleId=0";
+        List<string> tab = new List<string>();
+        for (int i = 1; i < 21; i++)
+        {
+            tab.Add(url.Replace("styleId=0", $"styleId={i}"));
+        }
+        return tab;
+    }
+    public static int[] GetPkt(string url)
+    {
+        var htmlDocument = Loader(url);
         var times = htmlDocument.DocumentNode.SelectNodes("//tr[@class='athleteBest0']//td[@class='code']");
         int[] tab = new int[times.Count];
         int inter = 0;
         for (int i = 0; i < tab.Length; i++)
         {
-
             string newby = Convert.ToString(times[i].InnerText.Trim().Replace("-", ""));
-            if (string.IsNullOrEmpty(newby))
-            {
-
-            }
-            else
+            if (!String.IsNullOrEmpty(newby))
             {
                 tab[inter] = Convert.ToInt32(newby);
                 inter++;
             }
         }
         return tab;
-
     }
     public static string[] GetDistance(string url)
     {
-        var httpClient = new HttpClient();
-        var html = httpClient.GetStringAsync(url).Result;
-        var htmlDocument = new HtmlDocument();
-        htmlDocument.LoadHtml(html);
+        var htmlDocument = Loader(url);
         var times = htmlDocument.DocumentNode.SelectNodes("//tr[@class='athleteBest0']//td[@class='event']//a");
         string[] tab = new string[times.Count];
         for (int i = 0; i < tab.Length; i++)
@@ -363,14 +185,8 @@ class SCMRP
     }
     public static string GetName(string url)
     {
-        var httpClient = new HttpClient();
-        var html = httpClient.GetStringAsync(url).Result;
-        var htmlDocument = new HtmlDocument();
-        htmlDocument.LoadHtml(html);
-        var times = htmlDocument.DocumentNode.SelectSingleNode("//div[@id='name']");
-        string name = times.InnerText.Trim().Replace("(2009&nbsp;&nbsp;)", "").Replace(",", "");
-        return name;
+        var htmlDocument = Loader(url);
+        string times = htmlDocument.DocumentNode.SelectSingleNode("//div[@id='name']").InnerText.Trim().Replace("(2009&nbsp;&nbsp;)", "").Replace(",", "");
+        return times;
     }
 }
-
-
