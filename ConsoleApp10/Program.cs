@@ -29,7 +29,7 @@ class SCMRP
 
     public static void CreateandAdd()
     {
-        string connectionString = "Host=localhost;Username=postgres;Password=Mzkwcim181099!;Database=WorldRecords";
+        string connectionString = "Host=localhost;Username=postgres;Password=postgres;Database=WorldRecords";
 
         Dictionary<string, double> RudolphTableValues = new Dictionary<string, double>();
         double[] wo = ConvertStringToDouble(GettingShortCurseWorldRecordsMen());
