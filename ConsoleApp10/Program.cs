@@ -7,23 +7,28 @@ class SCMRP
 {
     static void Main()
     {
+        /*
         string url = "https://www.swimrankings.net/index.php?page=athleteDetail&athleteId=5161550";
         int[] tab = GetPkt(url);
         string[] distnace = GetDistance(url);
         string name = GetName(url);
         Console.WriteLine(name);
         Dictionary<string, int> athlete = new Dictionary<string, int>();
+        */
         CreateandAdd();
     }
-
+    static void Calculator()
+    {
+        double dowolny50m = 20.16;
+        double rekord = 24.91;
+        double finaPoints = 1000 * Math.Pow((dowolny50m / rekord), 3);
+    }
     public static void CreateandAdd()
     {
         string connectionString = "Host=localhost;Username=postgres;Password=Mzkwcim181099!;Database=WorldRecords";
 
-        Dictionary<string, double> RudolphTableValues = new Dictionary<string, double>();
-        double[] wo = ConvertStringToDouble(GettingShortCurseWorldRecordsMen());
         List<string> distancesarray = GettingDistances();
-        List<double> records = new List<double>(wo);
+        List<double> records = ConvertStringToDouble(GettingShortCurseWorldRecordsMen());
         records.Remove(21.75);
         records.Remove(443.42);
         string pomocnik = "REAL";
@@ -78,16 +83,15 @@ class SCMRP
         }
         return addValuesQueryTest;
     }
-    public static string[] GettingShortCurseWorldRecordsMen()
+    public static List<string> GettingShortCurseWorldRecordsMen()
     {
         string url = "https://www.swimrankings.net/index.php?page=recordDetail&recordListId=50001&genderCourse=SCM_1";
-        var htmlDocument = Loader(url);
-        var currentTimes = htmlDocument.DocumentNode.SelectNodes("//td[@class='swimtime']");
-        string[] tab = new string[currentTimes.Count];
+        var currentTimes = Loader(url).DocumentNode.SelectNodes("//td[@class='swimtime']");
+        List<string> tab = new List<string>();
         Console.WriteLine(currentTimes.Count);
         for (int i = 0; i < currentTimes.Count; i++)
         {
-            tab[i] = currentTimes[i].InnerText;
+            tab.Add(currentTimes[i].InnerText);
             Console.WriteLine(tab[i]);
         }
         return tab;
@@ -95,8 +99,7 @@ class SCMRP
     public static string[] GettingLongCurseWorldRecordsMen()
     {
         string url = "https://www.swimrankings.net/index.php?page=recordDetail&recordListId=50001&gender=1&course=LCM&styleId=1";
-        var htmlDocument = Loader(url);
-        var currentTimes = htmlDocument.DocumentNode.SelectNodes("//td[@class='swimtime']");
+        var currentTimes = Loader(url).DocumentNode.SelectNodes("//td[@class='swimtime']");
         string[] tab = new string[20];
         for (int i = 0; i < tab.Length; i++)
         {
@@ -104,15 +107,16 @@ class SCMRP
         }
         return tab;
     }
-    static double [] ConvertStringToDouble(string[]doubles)
+    static List<double> ConvertStringToDouble(List<string> doubles)
     {
-        double[] converted2 = new double[doubles.Length]; 
-        for (int i = 0; i < doubles.Length; i++)
+        double[] converted2 = new double[doubles.Count]; 
+        for (int i = 0; i < doubles.Count; i++)
         {
             string[] list = doubles[i].Split(":");
             converted2[i] = (list.Length != 1) ? (Math.Round(Convert.ToDouble(list[0]), 2) * 60 + Math.Round(Convert.ToDouble(list[1]), 2)) : Math.Round(Convert.ToDouble(list[0]), 2);
         }
-        return converted2;
+        List<double> wow = converted2.ToList();
+        return wow;
     }
     public static List<string> GettingDistances()
     {
@@ -157,8 +161,7 @@ class SCMRP
     }
     public static int[] GetPkt(string url)
     {
-        var htmlDocument = Loader(url);
-        var times = htmlDocument.DocumentNode.SelectNodes("//tr[@class='athleteBest0']//td[@class='code']");
+        var times = Loader(url).DocumentNode.SelectNodes("//tr[@class='athleteBest0']//td[@class='code']");
         int[] tab = new int[times.Count];
         int inter = 0;
         for (int i = 0; i < tab.Length; i++)
@@ -174,8 +177,7 @@ class SCMRP
     }
     public static string[] GetDistance(string url)
     {
-        var htmlDocument = Loader(url);
-        var times = htmlDocument.DocumentNode.SelectNodes("//tr[@class='athleteBest0']//td[@class='event']//a");
+        var times = Loader(url).DocumentNode.SelectNodes("//tr[@class='athleteBest0']//td[@class='event']//a");
         string[] tab = new string[times.Count];
         for (int i = 0; i < tab.Length; i++)
         {
@@ -185,8 +187,6 @@ class SCMRP
     }
     public static string GetName(string url)
     {
-        var htmlDocument = Loader(url);
-        string times = htmlDocument.DocumentNode.SelectSingleNode("//div[@id='name']").InnerText.Trim().Replace("(2009&nbsp;&nbsp;)", "").Replace(",", "");
-        return times;
+        return Loader(url).DocumentNode.SelectSingleNode("//div[@id='name']").InnerText.Trim().Replace("(2009&nbsp;&nbsp;)", "").Replace(",", "");
     }
 }
