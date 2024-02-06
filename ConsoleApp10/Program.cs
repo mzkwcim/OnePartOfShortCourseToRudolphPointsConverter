@@ -25,7 +25,7 @@ class SCMRP
     }
     public static void CreateandAdd()
     {
-        string connectionString = "Host=localhost;Username=postgres;Password=Mzkwcim181099!;Database=WorldRecords";
+        string connectionString = "Host=localhost;Username=postgres;Password=kk;Database=WorldRecords";
 
         List<string> distancesarray = GettingDistances();
         List<double> records = ConvertStringToDouble(GettingShortCurseWorldRecordsMen());
